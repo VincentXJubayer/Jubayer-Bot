@@ -87,6 +87,6 @@ module.exports.run = async ({ event, api }) => {
     api.sendMessage(msg, threadID, () => fs.unlinkSync(imagePath), messageID);
   } catch (err) {
     console.error(err);
-    api.sendMessage("⚠️ কিছু সমস্যা হয়েছে, আবার চেষ্টা করুন!", threadID, messageID);
+    api.sendMessage("ERROR XD¿", threadID, messageID);
   }
 };
