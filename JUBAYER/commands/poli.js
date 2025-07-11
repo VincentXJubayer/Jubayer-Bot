@@ -1,27 +1,49 @@
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+
 module.exports.config = {
   name: "poli",
-  version: "1.0.",
+  version: "1.0.0",
   hasPermssion: 0,
-  credits: "jameslim",
-  description: "generate image from polination",
-  usePrefix: true,
+  credits: "Jubayer",
+  description: "Generate image using Pollinations API",
   commandCategory: "image",
-  usages: "query",
-  cooldowns: 2,
+  usages: "[text]",
+  cooldowns: 5
 };
 
-module.exports.run = async ({api, event, args }) => {
-const axios = require('axios');
-const fs = require('fs-extra');
- let { threadID, messageID } = event;
-  let query = args.join(" ");
-  if (!query) return api.sendMessage("put text/query", threadID, messageID);
-let path = __dirname + `/cache/poli.png`;
-  const poli = (await axios.get(`https://image.pollinations.ai/prompt/${query}`, {
-    responseType: "arraybuffer",
-  })).data;
-  fs.writeFileSync(path, Buffer.from(poli, "utf-8"));
-  api.sendMessage({
-    body: `Here is what I Generated...`,
-    attachment: fs.createReadStream(path) }, threadID, () => fs.unlinkSync(path), messageID);
+async function getBaseURL() {
+  const res = await axios.get("https://raw.githubusercontent.com/VincentXJubayer/JUB4YE4/main/baseApiUrl.json");
+  return res.data.jubayer;
+}
+
+module.exports.run = async function({ api, event, args }) {
+  const { threadID, messageID } = event;
+  
+  if (!args[0]) {
+    return api.sendMessage("🔍 Prompt koi? Deya lagbe.", threadID, messageID);
+  }
+
+  const prompt = args.join(" ").trim();
+  const fileName = `poli_${Date.now()}.png`;
+  const savePath = path.join(__dirname, "cache", fileName);
+
+  try {
+    const baseURL = await getBaseURL();
+    const apiUrl = `${baseURL}/api/poli/generate`;
+
+    const response = await axios.post(apiUrl, { prompt }, { responseType: "arraybuffer" });
+
+    fs.writeFileSync(savePath, response.data);
+
+    api.sendMessage({
+      body: `🎨 Generated Image for Prompt: "${prompt}"`,
+      attachment: fs.createReadStream(savePath)
+    }, threadID, () => fs.unlinkSync(savePath), messageID);
+
+  } catch (err) {
+    console.error("❌ POLI Error:", err.message);
+    api.sendMessage("⚠️ Couldn't generate image. API issue?", threadID, messageID);
+  }
 };
